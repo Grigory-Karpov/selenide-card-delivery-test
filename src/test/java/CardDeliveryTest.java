@@ -7,8 +7,7 @@ import java.time.Duration;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 
-import static com.codeborne.selenide.Selenide.$;
-import static com.codeborne.selenide.Selenide.open;
+import static com.codeborne.selenide.Selenide.*;
 
 public class CardDeliveryTest {
 
@@ -52,4 +51,41 @@ public class CardDeliveryTest {
                 .shouldBe(Condition.visible, Duration.ofSeconds(15))
                 .shouldHave(Condition.exactText("Успешно!\nВстреча успешно забронирована на " + meetingDate));
     }
+}
+@Test
+void shouldWorkWithComplexElements() {
+
+    LocalDate today = LocalDate.now();
+    LocalDate meetingDate = today.plusDays(7);
+
+    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd.MM.yyyy");
+    String formattedMeetingDate = meetingDate.format(formatter);
+
+
+    $("[data-test-id=city] input").setValue("Ка");
+
+    $$(".menu-item__control").findBy(Condition.text("Калуга")).click();
+
+
+    $("[data-test-id=date] .icon-button").click();
+
+
+    if (meetingDate.getMonthValue() != today.getMonthValue()) {
+
+        $("[data-direction=next]").click();
+    }
+
+
+    $$(".calendar__day").findBy(Condition.text(String.valueOf(meetingDate.getDayOfMonth()))).click();
+
+
+    $("[data-test-id=name] input").setValue("Петров-Водкин Кузьма");
+    $("[data-test-id=phone] input").setValue("+79111234567");
+    $("[data-test-id=agreement]").click();
+    $("button.button").click();
+
+
+    $("[data-test-id=notification]")
+            .shouldBe(Condition.visible, Duration.ofSeconds(15))
+            .shouldHave(Condition.exactText("Успешно!\nВстреча успешно забронирована на " + formattedMeetingDate));
 }
