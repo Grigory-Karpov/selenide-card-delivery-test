@@ -23,9 +23,7 @@ jobs:
         run: java -jar artifacts/app-card-delivery.jar &
 
 
-      - name: Wait for SUT to start
-        run: sleep 10
-
+     
 
       - name: Build and Test with Gradle
-        run: ./gradlew test -Dselenide.headless=true
+      run: ./gradlew test --info -Dselenide.headless=true
