@@ -1,9 +1,9 @@
 import com.codeborne.selenide.Condition;
-import com.codeborne.selenide.Configuration;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.openqa.selenium.Keys;
 
+import java.time.Duration;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
@@ -11,6 +11,7 @@ import java.time.temporal.ChronoUnit;
 import static com.codeborne.selenide.Selenide.*;
 
 public class CardDeliveryTest {
+
     public String generateDate(long addDays, String pattern) {
         return LocalDate.now().plusDays(addDays).format(DateTimeFormatter.ofPattern(pattern));
     }
@@ -24,45 +25,54 @@ public class CardDeliveryTest {
     void shouldSubmitRequestSuccessfully() {
         String meetingDate = generateDate(3, "dd.MM.yyyy");
 
-        $("[data-qa-id=city] input").setValue("Казань");
-        $("[data-qa-id='date'] input").sendKeys(Keys.chord(Keys.SHIFT, Keys.HOME), Keys.BACK_SPACE);
-        $("[data-qa-id='date'] input").setValue(meetingDate);
-        $("[data-qa-id='name'] input").setValue("Иван Петров");
-        $("[data-qa-id='phone'] input").setValue("+79991234567");
-        $("[data-qa-id=agreement]").click();
+        $("[data-test-id=city] input").setValue("Казань");
+        $("[data-test-id='date'] input").sendKeys(Keys.chord(Keys.SHIFT, Keys.HOME), Keys.BACK_SPACE);
+        $("[data-test-id='date'] input").setValue(meetingDate);
+        $("[data-test-id='name'] input").setValue("Иван Петров");
+        $("[data-test-id='phone'] input").setValue("+79991234567");
+        $("[data-test-id=agreement]").click();
         $(".button").click();
 
-        $("[data-qa-id=notification]").shouldBe(Condition.visible, Duration.ofSeconds(15));
-        $("[data-qa-id=notification]").shouldHave(Condition.exactText("Успешно! Встреча успешно забронирована на " + meetingDate));
+        $("[data-test-id=notification]").shouldBe(Condition.visible, Duration.ofSeconds(15));
+        $("[data-test-id=notification]").shouldHave(Condition.exactText("Успешно! Встреча успешно забронирована на " + meetingDate));
     }
 
     @Test
     void shouldWorkWithComplexElements() {
-        LocalDate today = LocalDate.now();
-        LocalDate meetingDate = today.plusDays(7);
+        // Устанавливаем дату встречи через 7 дней от СЕГОДНЯ
+        LocalDate meetingDate = LocalDate.now().plusDays(7);
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd.MM.yyyy");
         String formattedMeetingDate = meetingDate.format(formatter);
 
-        $("[data-qa-id=city] input").setValue("Ка");
+        // 1. Выбор города
+        $("[data-test-id=city] input").setValue("Ка");
         $$(".menu-item__control").findBy(Condition.text("Казань")).click();
 
-       
-        $("[data-qa-id=date] .icon-button").click();
+        // 2. Открытие календаря
+        $("[data-test-id=date] .icon-button").click();
 
-        long monthsToClick = ChronoUnit.MONTHS.between(today.withDayOfMonth(1), meetingDate.withDayOfMonth(1));
-        
+        // **ИСПРАВЛЕНИЕ №1: Правильный расчет разницы месяцев**
+        // Дата, которая открывается в календаре по умолчанию (сегодня + 3 дня)
+        LocalDate defaultDate = LocalDate.now().plusDays(3);
+        // Вычисляем, сколько раз нужно нажать на стрелку "вперед"
+        long monthsToClick = ChronoUnit.MONTHS.between(defaultDate.withDayOfMonth(1), meetingDate.withDayOfMonth(1));
+
         for (int i = 0; i < monthsToClick; i++) {
-            $("[data-qa-id='data-direction-next']").click();
+            $("[data-direction=next]").click();
         }
 
-        $$(".calendar__day:not(.calendar__day_other-month)").findBy(Condition.text(String.valueOf(meetingDate.getDayOfMonth()))).click();
+        // **ИСПРАВЛЕНИЕ №2: Правильный селектор для выбора дня**
+        $$("td.calendar__day").findBy(Condition.text(String.valueOf(meetingDate.getDayOfMonth()))).click();
 
-        $("[data-qa-id='name'] input").setValue("Иван Петров-Иванов");
-        $("[data-qa-id='phone'] input").setValue("+79123456789");
-        $("[data-qa-id=agreement]").click();
+
+        // 3. Заполнение остальных полей
+        $("[data-test-id='name'] input").setValue("Иван Петров-Иванов");
+        $("[data-test-id='phone'] input").setValue("+79123456789");
+        $("[data-test-id=agreement]").click();
         $(".button").click();
 
-        $("[data-qa-id=notification]").shouldBe(Condition.visible, Duration.ofSeconds(15));
-        $("[data-qa-id=notification]").shouldHave(Condition.exactText("Успешно! Встреча успешно забронирована на " + formattedMeetingDate));
+        // 4. Проверка результата
+        $("[data-test-id=notification]").shouldBe(Condition.visible, Duration.ofSeconds(15));
+        $("[data-test-id=notification]").shouldHave(Condition.exactText("Успешно! Встреча успешно забронирована на " + formattedMeetingDate));
     }
 }
